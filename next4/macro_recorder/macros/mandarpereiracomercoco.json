@@ -1,0 +1,273 @@
+[
+    {
+        "type": "mouse_up",
+        "button": "left",
+        "x": 846,
+        "y": 250,
+        "delay": 0.0878150463104248
+    },
+    {
+        "type": "key_down",
+        "key": "cmd",
+        "delay": 0.32279515266418457
+    },
+    {
+        "type": "key_up",
+        "key": "cmd",
+        "delay": 0.1150672435760498
+    },
+    {
+        "type": "key_down",
+        "key": "'w'",
+        "delay": 0.5009267330169678
+    },
+    {
+        "type": "key_up",
+        "key": "'w'",
+        "delay": 0.11919927597045898
+    },
+    {
+        "type": "key_down",
+        "key": "enter",
+        "delay": 1.0708632469177246
+    },
+    {
+        "type": "key_up",
+        "key": "enter",
+        "delay": 0.0779726505279541
+    },
+    {
+        "type": "key_down",
+        "key": "ctrl_l",
+        "delay": 1.1160285472869873
+    },
+    {
+        "type": "key_down",
+        "key": "alt_l",
+        "delay": 0.07895112037658691
+    },
+    {
+        "type": "key_down",
+        "key": "alt_l",
+        "delay": 0.26139330863952637
+    },
+    {
+        "type": "key_down",
+        "key": "alt_l",
+        "delay": 0.03209662437438965
+    },
+    {
+        "type": "key_down",
+        "key": "alt_l",
+        "delay": 0.03189682960510254
+    },
+    {
+        "type": "key_down",
+        "key": "alt_l",
+        "delay": 0.03199410438537598
+    },
+    {
+        "type": "key_down",
+        "key": "alt_l",
+        "delay": 0.03202390670776367
+    },
+    {
+        "type": "key_down",
+        "key": "alt_l",
+        "delay": 0.032057762145996094
+    },
+    {
+        "type": "key_down",
+        "key": "alt_l",
+        "delay": 0.030948638916015625
+    },
+    {
+        "type": "key_down",
+        "key": "alt_l",
+        "delay": 0.03203558921813965
+    },
+    {
+        "type": "key_down",
+        "key": "alt_l",
+        "delay": 0.03132987022399902
+    },
+    {
+        "type": "key_down",
+        "key": "alt_l",
+        "delay": 0.031978607177734375
+    },
+    {
+        "type": "key_down",
+        "key": "'\u00b0'",
+        "delay": 0.013285636901855469
+    },
+    {
+        "type": "key_up",
+        "key": "'\u00b0'",
+        "delay": 0.09217667579650879
+    },
+    {
+        "type": "key_up",
+        "key": "ctrl_l",
+        "delay": 0.14275121688842773
+    },
+    {
+        "type": "key_up",
+        "key": "alt_l",
+        "delay": 0.01
+    },
+    {
+        "type": "key_down",
+        "key": "'c'",
+        "delay": 0.900834321975708
+    },
+    {
+        "type": "key_up",
+        "key": "'c'",
+        "delay": 0.11910367012023926
+    },
+    {
+        "type": "key_down",
+        "key": "'a'",
+        "delay": 0.08188509941101074
+    },
+    {
+        "type": "key_up",
+        "key": "'a'",
+        "delay": 0.0921163558959961
+    },
+    {
+        "type": "key_down",
+        "key": "'e'",
+        "delay": 0.031000852584838867
+    },
+    {
+        "type": "key_up",
+        "key": "'e'",
+        "delay": 0.08497047424316406
+    },
+    {
+        "type": "key_down",
+        "key": "'s'",
+        "delay": 0.06395101547241211
+    },
+    {
+        "type": "key_up",
+        "key": "'s'",
+        "delay": 0.0780034065246582
+    },
+    {
+        "type": "key_down",
+        "key": "left",
+        "delay": 0.840947151184082
+    },
+    {
+        "type": "key_up",
+        "key": "left",
+        "delay": 0.07798409461975098
+    },
+    {
+        "type": "key_down",
+        "key": "left",
+        "delay": 0.07201385498046875
+    },
+    {
+        "type": "key_up",
+        "key": "left",
+        "delay": 0.07399129867553711
+    },
+    {
+        "type": "key_down",
+        "key": "left",
+        "delay": 0.08192968368530273
+    },
+    {
+        "type": "key_up",
+        "key": "left",
+        "delay": 0.047989606857299805
+    },
+    {
+        "type": "key_down",
+        "key": "left",
+        "delay": 0.12608027458190918
+    },
+    {
+        "type": "key_up",
+        "key": "left",
+        "delay": 0.10199093818664551
+    },
+    {
+        "type": "key_down",
+        "key": "backspace",
+        "delay": 0.6360116004943848
+    },
+    {
+        "type": "key_up",
+        "key": "backspace",
+        "delay": 0.102020263671875
+    },
+    {
+        "type": "mouse_down",
+        "button": "left",
+        "x": 360,
+        "y": 339,
+        "delay": 2.261138439178467
+    },
+    {
+        "type": "mouse_up",
+        "button": "left",
+        "x": 360,
+        "y": 339,
+        "delay": 0.08698248863220215
+    },
+    {
+        "type": "key_down",
+        "key": "'o'",
+        "delay": 1.7849328517913818
+    },
+    {
+        "type": "key_up",
+        "key": "'o'",
+        "delay": 0.09203267097473145
+    },
+    {
+        "type": "key_down",
+        "key": "'i'",
+        "delay": 0.4590170383453369
+    },
+    {
+        "type": "key_up",
+        "key": "'i'",
+        "delay": 0.08786129951477051
+    },
+    {
+        "type": "key_down",
+        "key": "space",
+        "delay": 0.06499147415161133
+    },
+    {
+        "type": "key_up",
+        "key": "space",
+        "delay": 0.11601471900939941
+    },
+    {
+        "type": "key_down",
+        "key": "'b'",
+        "delay": 0.040093183517456055
+    },
+    {
+        "type": "key_up",
+        "key": "'b'",
+        "delay": 0.09899663925170898
+    },
+    {
+        "type": "key_down",
+        "key": "'b'",
+        "delay": 0.07209229469299316
+    },
+    {
+        "type": "key_up",
+        "key": "'b'",
+        "delay": 0.07084488868713379
+    }
+]

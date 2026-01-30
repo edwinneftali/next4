@@ -1,0 +1,23 @@
+[
+    {
+        "type": "mouse_up",
+        "button": "left",
+        "x": 441,
+        "y": 345,
+        "delay": 0.07764959335327148
+    },
+    {
+        "type": "mouse_down",
+        "button": "left",
+        "x": 1103,
+        "y": 17,
+        "delay": 1.000014305114746
+    },
+    {
+        "type": "mouse_up",
+        "button": "left",
+        "x": 631,
+        "y": 153,
+        "delay": 1.36210036277771
+    }
+]
