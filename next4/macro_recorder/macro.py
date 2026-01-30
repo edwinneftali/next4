@@ -41,6 +41,8 @@ keyboard_listener = None
 last_time = 0
 has_recorded = False
 overlay = None
+playing = False
+
 
 # ===============================
 # UTIL
@@ -85,6 +87,33 @@ def on_press(key):
     global last_time
     if not recording:
         return
+
+    try:
+        if overlay and overlay.focus_get():
+            return
+    except:
+        pass
+
+    delay = time.time() - last_time
+    try:
+        k = key.char
+    except:
+        k = str(key).replace("Key.", "")
+
+    actions.append({
+        "type": "key",
+        "key": k,
+        "delay": delay
+    })
+    last_time = time.time()
+
+
+def on_abort(key):
+    global playing
+    if key == keyboard.Key.esc:
+        playing = False
+        return False
+
 
     try:
         if overlay and overlay.focus_get():
@@ -207,6 +236,13 @@ def save_macro():
 
 def play_macro():
     def run():
+        global playing
+        playing = True
+
+        abort_listener = keyboard.Listener(on_press=on_abort)
+        abort_listener.start()
+
+        
         selected = macro_select.get()
         if not selected:
             app.after(0, lambda: status.configure(text="⚠️ Selecione uma macro"))
@@ -221,6 +257,8 @@ def play_macro():
             acts = json.load(f)
 
         for a in acts:
+            if not playing:
+                break
             time.sleep(max(a["delay"], 0.05))
 
             if a["type"] == "click":
@@ -247,11 +285,15 @@ def play_macro():
                 elif len(key) == 1:
                     pyautogui.write(key)
 
+        
+        playing = False
+        abort_listener.stop()
+
         pyautogui.keyUp("alt")
         pyautogui.keyUp("ctrl")
         pyautogui.keyUp("shift")
 
-        app.after(0, lambda: status.configure(text="✅ Executado"))
+        app.after(0, lambda: status.configure(text="⛔ Macro interrompida ou finalizada"))
 
     threading.Thread(target=run, daemon=True).start()
 
