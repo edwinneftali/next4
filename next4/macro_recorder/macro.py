@@ -388,6 +388,40 @@ def editar_delay(event):
             pass
 
     ctk.CTkButton(win, text="Salvar", command=salvar).pack(pady=8)
+def editar_delay_selecionado():
+    idx = get_acao_selecionada()
+    if idx is None or idx >= len(actions):
+        status.configure(text="⚠️ Selecione uma ação")
+        return
+
+    win = ctk.CTkToplevel(app)
+    win.title("Editar Delay")
+    win.geometry("220x120")
+    win.grab_set()
+
+    ctk.CTkLabel(win, text="Delay (segundos):").pack(pady=6)
+    entry = ctk.CTkEntry(win)
+    entry.insert(0, str(actions[idx]["delay"]))
+    entry.pack(pady=4)
+
+    def salvar():
+        try:
+            actions[idx]["delay"] = float(entry.get())
+            atualizar_lista_acoes()
+            win.destroy()
+        except:
+            status.configure(text="❌ Valor inválido")
+
+    ctk.CTkButton(win, text="Salvar", command=salvar).pack(pady=8)
+def remover_acao_selecionada():
+    idx = get_acao_selecionada()
+    if idx is None or idx >= len(actions):
+        status.configure(text="⚠️ Selecione uma ação")
+        return
+
+    actions.pop(idx)
+    atualizar_lista_acoes()
+    status.configure(text="🗑 Ação removida")
 
 def remover_acao(event):
     index = int(actions_box.index(f"@{event.x},{event.y}").split(".")[0]) - 1
@@ -416,20 +450,23 @@ def save_macro():
     
 
 def formatar_acao(a, idx):
-    delay = f"⏱ {round(a['delay'], 2)}s"
+    delay = f"⏱ {round(a.get('delay', 0), 2)}s"
 
     if a["type"] == "click":
         return f"{idx}. 🖱 Clique em ({a['x']}, {a['y']})  {delay}"
 
-    if a["type"] == "scroll":
+    elif a["type"] == "scroll":
         direcao = "cima" if a["dy"] > 0 else "baixo"
         return f"{idx}. 🧻 Scroll {direcao}  {delay}"
 
-    if a["type"] == "key_down":
+    elif a["type"] == "key_down":
         return f"{idx}. ⌨️ Pressionou {a['key'].upper()}  {delay}"
 
-    if a["type"] == "key_up":
+    elif a["type"] == "key_up":
         return f"{idx}. ⌨️ Soltou {a['key'].upper()}"
+
+    # 🔥 FALLBACK (IMPRESCINDÍVEL)
+    return f"{idx}. ⚠️ Ação desconhecida ({a.get('type')})"
 
 play_overlay = None
 play_overlay_label = None
@@ -569,6 +606,13 @@ def delete_macro():
     os.remove(path)
     refresh_macros()
     status.configure(text=f"🗑 Macro '{selected}' excluída")
+def get_acao_selecionada():
+    try:
+        index = actions_box.index("insert")
+        linha = int(index.split(".")[0]) - 1
+        return linha
+    except:
+        return None
 
 # ===============================
 # ESCOLHER PASTA
@@ -654,14 +698,35 @@ ctk.CTkLabel(
     font=("Arial", 14, "bold")
 ).pack(pady=(12, 4))
 
-
 actions_box = ctk.CTkTextbox(
     app,
     width=360,
     height=160
 )
+actions_box.bind("<Double-Button-1>", editar_delay)
+actions_box.bind("<Button-3>", remover_acao)
 actions_box.pack(pady=6)
 actions_box.configure(state="disabled")
+
+actions_buttons = ctk.CTkFrame(app)
+actions_buttons.pack(pady=4)
+btn_edit = ctk.CTkButton(
+    actions_buttons,
+    text="✏️ Editar delay",
+    width=160,
+    command=lambda: editar_delay_selecionado()
+)
+btn_edit.pack(side="left", padx=6)
+
+btn_remove = ctk.CTkButton(
+    actions_buttons,
+    text="🗑 Remover ação",
+    width=160,
+    fg_color="#a83232",
+    hover_color="#8f2a2a",
+    command=lambda: remover_acao_selecionada()
+)
+btn_remove.pack(side="left", padx=6)
 
 # ===============================
 # BLOCO DE MACROS
