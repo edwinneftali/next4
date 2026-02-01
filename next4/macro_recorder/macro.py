@@ -15,6 +15,68 @@ APP_VERSION = "1.1.0"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
 
+
+KEY_MAP = {
+    "win": "winleft",
+    "ctrl_l": "ctrl",
+    "ctrl_r": "ctrl",
+    "alt_l": "alt",
+    "alt_r": "alt",
+    "shift": "shift",
+    "shift_l": "shift",
+    "shift_r": "shift",
+    "enter": "enter",
+    "tab": "tab",
+    "esc": "esc",
+    "space": "space",
+    "backspace": "backspace",
+    "delete": "delete",
+    "up": "up",
+    "down": "down",
+    "left": "left",
+    "right": "right",
+    "caps_lock": "capslock",
+    "f1": "f1",
+    "f2": "f2",
+    "f3": "f3",
+    "f4": "f4",
+    "f5": "f5",
+    "f6": "f6",
+    "f7": "f7",
+    "f8": "f8",
+    "f9": "f9",
+    "f10": "f10",
+    "f11": "f11",
+    "f12": "f12"
+}
+DEFAULT_HOTKEYS = {
+    "record": "f8",
+    "play": "f9",
+    "abort": "esc"
+}
+
+def load_hotkeys():
+    if not os.path.exists(CONFIG_FILE):
+        return DEFAULT_HOTKEYS.copy()
+
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+        return data.get("hotkeys", DEFAULT_HOTKEYS.copy())
+
+
+def save_hotkeys(hotkeys):
+    data = {}
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+    data["hotkeys"] = hotkeys
+
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+HOTKEYS = load_hotkeys()
+
+
 # ===============================
 # CONFIG DE PASTA (persistente)
 # ===============================
@@ -31,6 +93,32 @@ def load_config():
 MACRO_DIR = load_config() or os.path.join(BASE_DIR, "macros")
 os.makedirs(MACRO_DIR, exist_ok=True)
 
+def on_hotkey(key):
+    global playing
+
+    if not hotkeys_enabled:
+        return
+
+    try:
+        pressed = key.char.lower()
+    except:
+        pressed = str(key).replace("Key.", "").lower()
+
+    if pressed == HOTKEYS["record"]:
+        if recording:
+            stop_record()
+        else:
+            start_record()
+
+    elif pressed == HOTKEYS["play"]:
+        if not playing:
+            play_macro()
+
+    elif pressed == HOTKEYS["abort"]:
+        playing = False
+        stop_record()
+        status.configure(text="⛔ Abortado")
+
 # ===============================
 # ESTADO
 # ===============================
@@ -42,6 +130,14 @@ last_time = 0
 has_recorded = False
 overlay = None
 playing = False
+hotkeys_enabled = True
+active_modifiers = set()
+MODIFIERS = {
+    "ctrl", "ctrl_l", "ctrl_r",
+    "alt", "alt_l", "alt_r",
+    "shift", "shift_l", "shift_r",
+    "win"
+}
 
 
 # ===============================
@@ -83,33 +179,45 @@ def on_click(x, y, button, pressed):
     })
     last_time = time.time()
 
+
 def on_press(key):
     global last_time
     if not recording:
         return
 
-    try:
-        if overlay and overlay.focus_get():
-            return
-    except:
-        pass
-
     delay = time.time() - last_time
+
     try:
         k = key.char
-    except:
-        k = str(key).replace("Key.", "")
+    except AttributeError:
+        if key == keyboard.Key.cmd:
+            k = "win"
+        else:
+            k = str(key).replace("Key.", "")
 
     actions.append({
-        "type": "key",
+        "type": "key_down",
         "key": k,
         "delay": delay
     })
+
     last_time = time.time()
 
+def atualizar_label_atalhos():
+    texto = (
+        "⌨️ Atalhos\n"
+        f"{HOTKEYS['record']}  Gravar / Parar\n"
+        f"{HOTKEYS['play']}  Executar\n"
+        f"{HOTKEYS['abort']} Abortar"
+    )
+    shortcuts.configure(text=texto)
+
+def mudar_atalho(acao, nova_tecla):
+    HOTKEYS[acao] = nova_tecla.upper()
+    atualizar_label_atalhos()
 
 def on_abort(key):
-    global playing
+    global playing, last_time
     if key == keyboard.Key.esc:
         playing = False
         return False
@@ -133,6 +241,26 @@ def on_abort(key):
         "delay": delay
     })
     last_time = time.time()
+    
+def on_release(key):
+    global last_time
+    if not recording:
+        return
+
+    try:
+        k = key.char
+    except AttributeError:
+        if key == keyboard.Key.cmd:
+            k = "win"
+        else:
+            k = str(key).replace("Key.", "")
+
+    actions.append({
+        "type": "key_up",
+        "key": k,
+        "delay": 0
+    })
+
 
 def on_scroll(x, y, dx, dy):
     global last_time
@@ -193,12 +321,18 @@ def start_record():
     last_time = time.time()
 
     mouse_listener = mouse.Listener(
-    on_click=on_click,
-    on_scroll=on_scroll)
+        on_click=on_click,
+        on_scroll=on_scroll
+    )
 
-    keyboard_listener = keyboard.Listener(on_press=on_press)
+    keyboard_listener = keyboard.Listener(
+        on_press=on_press,
+        on_release=on_release
+    )
+
     mouse_listener.start()
     keyboard_listener.start()
+
 
 def stop_record():
     global recording, mouse_listener, keyboard_listener, overlay
@@ -210,8 +344,9 @@ def stop_record():
         keyboard_listener.stop()
 
     if overlay:
-        overlay.destroy()
+        overlay.after(0, overlay.destroy)
         overlay = None
+
 
     app.deiconify()
     status.configure(text="⏹️ Gravação parada")
@@ -236,13 +371,13 @@ def save_macro():
 
 def play_macro():
     def run():
-        global playing
+        global playing, active_modifiers
         playing = True
+        active_modifiers.clear()
 
         abort_listener = keyboard.Listener(on_press=on_abort)
         abort_listener.start()
 
-        
         selected = macro_select.get()
         if not selected:
             app.after(0, lambda: status.configure(text="⚠️ Selecione uma macro"))
@@ -259,7 +394,8 @@ def play_macro():
         for a in acts:
             if not playing:
                 break
-            time.sleep(max(a["delay"], 0.05))
+
+            time.sleep(max(a["delay"], 0.03))
 
             if a["type"] == "click":
                 pyautogui.click(a["x"], a["y"])
@@ -267,35 +403,52 @@ def play_macro():
             elif a["type"] == "scroll":
                 pyautogui.scroll(a["dy"] * 100)
 
-            elif a["type"] == "key":
+            elif a["type"] == "key_down":
                 key = a["key"].lower()
+                mapped = KEY_MAP.get(key, key)
 
-                if key == "cmd":
-                    pyautogui.hotkey("ctrl", "esc")
-                elif key == "enter":
-                    pyautogui.press("enter")
-                elif key == "tab":
-                    pyautogui.press("tab")
-                elif key in ["alt_l", "alt_r"]:
-                    pyautogui.keyDown("alt")
-                elif key in ["ctrl_l", "ctrl_r"]:
-                    pyautogui.keyDown("ctrl")
-                elif key in ["shift", "shift_l", "shift_r"]:
-                    pyautogui.keyDown("shift")
-                elif len(key) == 1:
-                    pyautogui.write(key)
+                if key in MODIFIERS:
+                    active_modifiers.add(key)
+                    pyautogui.keyDown(mapped)
+                else:
+                    if active_modifiers:
+                        # ATALHO
+                        pyautogui.keyDown(mapped)
+                    else:
+                        # TEXTO
+                        pyautogui.press(mapped)
 
-        
+            elif a["type"] == "key_up":
+                key = a["key"].lower()
+                mapped = KEY_MAP.get(key, key)
+
+                pyautogui.keyUp(mapped)
+                active_modifiers.discard(key)
+
         playing = False
         abort_listener.stop()
 
-        pyautogui.keyUp("alt")
-        pyautogui.keyUp("ctrl")
-        pyautogui.keyUp("shift")
+        # garante limpeza
+        for k in ["alt", "ctrl", "shift", "winleft"]:
+            pyautogui.keyUp(k)
 
-        app.after(0, lambda: status.configure(text="⛔ Macro interrompida ou finalizada"))
+        app.after(0, lambda: status.configure(text="✅ Macro finalizada"))
 
     threading.Thread(target=run, daemon=True).start()
+def delete_macro():
+    selected = macro_select.get()
+    if not selected:
+        status.configure(text="⚠️ Nenhuma macro selecionada")
+        return
+
+    path = os.path.join(MACRO_DIR, f"{selected}.json")
+    if not os.path.exists(path):
+        status.configure(text="❌ Macro não encontrada")
+        return
+
+    os.remove(path)
+    refresh_macros()
+    status.configure(text=f"🗑 Macro '{selected}' excluída")
 
 # ===============================
 # ESCOLHER PASTA
@@ -315,25 +468,120 @@ def choose_macro_folder():
 # ===============================
 # GUI PRINCIPAL
 # ===============================
+# ===============================
+# GUI PRINCIPAL
+# ===============================
+def open_settings():
+    win = ctk.CTkToplevel(app)
+    win.title("Configurações")
+    win.geometry("320x300")
+    win.resizable(False, False)
+    win.grab_set()
+
+    ctk.CTkLabel(win, text="⌨️ Atalhos do Programa", font=("Arial", 14, "bold")).pack(pady=10)
+
+    entries = {}
+
+    def add_field(label, key):
+        frame = ctk.CTkFrame(win, fg_color="transparent")
+        frame.pack(pady=6, padx=20, fill="x")
+
+        ctk.CTkLabel(frame, text=label, width=120, anchor="w").pack(side="left")
+        e = ctk.CTkEntry(frame, width=100)
+        e.insert(0, HOTKEYS[key])
+        e.pack(side="right")
+        entries[key] = e
+
+    add_field("Gravar / Parar", "record")
+    add_field("Executar macro", "play")
+    add_field("Abortar", "abort")
+
+    def save():
+        for k, e in entries.items():
+            HOTKEYS[k] = e.get().lower()
+
+        save_hotkeys(HOTKEYS)
+
+        atualizar_label_atalhos()  # 👈 AQUI ESTÁ A CHAVE
+
+        status.configure(text="⚙️ Atalhos atualizados")
+        win.destroy()
+
+
+    ctk.CTkButton(win, text="💾 Salvar", command=save).pack(pady=15)
+
 app = ctk.CTk()
 app.geometry("420x420")
 app.title("neXt4")
 
 status = ctk.CTkLabel(app, text="Pronto")
-status.pack(pady=10)
+status.pack(pady=8)
 
+# ===============================
+# BLOCO DE GRAVAÇÃO
+# ===============================
 macro_name = ctk.CTkEntry(app, placeholder_text="Nome da macro")
-macro_name.pack(pady=5, fill="x", padx=40)
+macro_name.pack(pady=6, fill="x", padx=40)
 
-ctk.CTkButton(app, text="🔴 Gravar", command=start_record).pack(pady=6)
-ctk.CTkButton(app, text="💾 Salvar macro", command=save_macro).pack(pady=6)
+record_frame = ctk.CTkFrame(app, fg_color="transparent")
+record_frame.pack(pady=4)
 
-ctk.CTkButton(app, text="📂 Escolher pasta dos macros", command=choose_macro_folder).pack(pady=6)
+ctk.CTkButton(record_frame, text="🔴 Gravar", command=start_record, width=120).pack(side="left", padx=6)
+ctk.CTkButton(record_frame, text="💾 Salvar", command=save_macro, width=120).pack(side="left", padx=6)
+
+# ===============================
+# BLOCO DE MACROS
+# ===============================
+ctk.CTkLabel(app, text="Macros", font=("Arial", 13, "bold")).pack(pady=(12, 4))
 
 macro_select = ctk.CTkComboBox(app, values=list_macros())
-macro_select.pack(pady=10, fill="x", padx=40)
+macro_select.pack(pady=4, fill="x", padx=40)
 
-ctk.CTkButton(app, text="▶ Executar macro selecionada", command=play_macro).pack(pady=10)
+macro_action_frame = ctk.CTkFrame(app, fg_color="transparent")
+macro_action_frame.pack(pady=6)
+
+ctk.CTkButton(
+    macro_action_frame,
+    text="▶ Executar",
+    command=play_macro,
+    width=120
+).pack(side="left", padx=6)
+
+ctk.CTkButton(
+    macro_action_frame,
+    text="🗑 Excluir",
+    command=delete_macro,
+    width=120
+).pack(side="left", padx=6)
+ctk.CTkButton(
+    app,
+    text="⚙️ Configurações",
+    command=open_settings
+).pack(pady=6)
+
+# ===============================
+# CONFIGURAÇÕES
+# ===============================
+ctk.CTkButton(
+    app,
+    text="📂 Pasta dos macros",
+    command=choose_macro_folder
+).pack(pady=10)
+
+# ===============================
+# ATALHOS (RESUMIDO)
+# ===============================
+
+shortcuts = ctk.CTkLabel(
+    app,
+    text="",
+    justify="left"
+)
+shortcuts.pack(pady=10)
+
+atualizar_label_atalhos()  # ✅ agora existe
 
 refresh_macros()
+keyboard.Listener(on_press=on_hotkey).start()
 app.mainloop()
+
