@@ -165,20 +165,35 @@ def is_mouse_over_overlay(x, y):
 # ===============================
 def on_click(x, y, button, pressed):
     global last_time
-    if not recording or not pressed:
+    if not recording:
         return
     if is_mouse_over_overlay(x, y):
         return
 
     delay = time.time() - last_time
-    actions.append({
-        "type": "click",
-        "x": x,
-        "y": y,
-        "delay": delay
-    })
+
+    btn = "left" if button == mouse.Button.left else "right"
+
+    if pressed:
+        actions.append({
+            "type": "mouse_down",
+            "button": btn,
+            "x": x,
+            "y": y,
+            "delay": delay
+        })
+    else:
+        actions.append({
+            "type": "mouse_up",
+            "button": btn,
+            "x": x,
+            "y": y,
+            "delay": 0
+        })
+
     last_time = time.time()
     atualizar_lista_acoes()
+
 
 
 def on_press(key):
@@ -201,7 +216,7 @@ def on_press(key):
         "key": k,
         "delay": delay
     })
-    atualizar_lista_acoes()
+
     last_time = time.time()
 
 def atualizar_label_atalhos():
@@ -242,8 +257,22 @@ def on_abort(key):
         "delay": delay
     })
     last_time = time.time()
-    atualizar_lista_acoes()
-    
+
+def on_move(x, y):
+    global last_time
+    if not recording:
+        return
+    if is_mouse_over_overlay(x, y):
+        return
+
+    delay = time.time() - last_time
+    actions.append({
+        "type": "mouse_move",
+        "x": x,
+        "y": y,
+        "delay": delay
+    })
+    last_time = time.time()    
 def on_release(key):
     global last_time
     if not recording:
@@ -262,7 +291,7 @@ def on_release(key):
         "key": k,
         "delay": 0
     })
-    atualizar_lista_acoes()
+ 
 
 def on_scroll(x, y, dx, dy):
     global last_time
@@ -279,7 +308,7 @@ def on_scroll(x, y, dx, dy):
         "delay": delay
     })
     last_time = time.time()
-    atualizar_lista_acoes()
+
 
 # ===============================
 # OVERLAY
@@ -319,15 +348,17 @@ def start_record():
     show_overlay()
 
     actions.clear()
-    atualizar_lista_acoes()
+  
     has_recorded = True
     recording = True
     last_time = time.time()
 
     mouse_listener = mouse.Listener(
-        on_click=on_click,
-        on_scroll=on_scroll
-    )
+    on_click=on_click,
+    on_scroll=on_scroll
+)
+
+
 
     keyboard_listener = keyboard.Listener(
         on_press=on_press,
@@ -359,10 +390,17 @@ def atualizar_lista_acoes():
     actions_box.configure(state="normal")
     actions_box.delete("1.0", "end")
 
-    for i, a in enumerate(actions):
-        actions_box.insert("end", formatar_acao(a, i) + "\n")
+    visivel_idx = 0
+    for a in actions:
+        # atualmente você ignora mouse_move
+        # if a["type"] == "mouse_move":
+        #     continue
+
+        actions_box.insert("end", formatar_acao(a, visivel_idx) + "\n")
+        visivel_idx += 1
 
     actions_box.configure(state="disabled")
+
 
 def editar_delay(event):
     index = int(actions_box.index(f"@{event.x},{event.y}").split(".")[0]) - 1
@@ -378,7 +416,6 @@ def editar_delay(event):
     entry = ctk.CTkEntry(win)
     entry.insert(0, str(actions[index]["delay"]))
     entry.pack(pady=4)
-
     def salvar():
         try:
             actions[index]["delay"] = float(entry.get())
@@ -452,21 +489,29 @@ def save_macro():
 def formatar_acao(a, idx):
     delay = f"⏱ {round(a.get('delay', 0), 2)}s"
 
+    if a["type"] == "mouse_down":
+        return f"{idx}. 🖱 Segurar {a['button']}  {delay}"
+
+    if a["type"] == "mouse_up":
+        return f"{idx}. 🖱 Soltar {a['button']}"
+
     if a["type"] == "click":
-        return f"{idx}. 🖱 Clique em ({a['x']}, {a['y']})  {delay}"
+        return f"{idx}. 🖱 Clique  {delay}"
 
-    elif a["type"] == "scroll":
-        direcao = "cima" if a["dy"] > 0 else "baixo"
-        return f"{idx}. 🧻 Scroll {direcao}  {delay}"
+    if a["type"] == "scroll":
+        return f"{idx}. 🧻 Scroll  {delay}"
 
-    elif a["type"] == "key_down":
-        return f"{idx}. ⌨️ Pressionou {a['key'].upper()}  {delay}"
+    if a["type"] == "key_down":
+        return f"{idx}. ⌨️ {a['key'].upper()} ↓  {delay}"
+    
+    if a["type"] == "mouse_move":
+        return f"{idx}. 🖱 Mover mouse para ({a['x']},{a['y']}) ⏱ {round(a.get('delay', 0), 2)}s"
 
-    elif a["type"] == "key_up":
-        return f"{idx}. ⌨️ Soltou {a['key'].upper()}"
+    if a["type"] == "key_up":
+        return f"{idx}. ⌨️ {a['key'].upper()} ↑"
 
-    # 🔥 FALLBACK (IMPRESCINDÍVEL)
-    return f"{idx}. ⚠️ Ação desconhecida ({a.get('type')})"
+    return None
+
 
 play_overlay = None
 play_overlay_label = None
@@ -530,7 +575,7 @@ def play_macro():
             if not playing:
                 break
 
-            time.sleep(max(a.get("delay", 0), 0.03))
+            time.sleep(max(a.get("delay", 0), 0.005))
 
             # ===============================
             # MOUSE CLICK
@@ -576,6 +621,14 @@ def play_macro():
 
                 pyautogui.keyUp(mapped)
                 active_modifiers.discard(key)
+            elif a["type"] == "mouse_down":
+                show_play_overlay(f"🖱 Segurar {a['button']}")
+                pyautogui.mouseDown(a["x"], a["y"], button=a["button"])
+            elif a["type"] == "mouse_up":
+                show_play_overlay(f"🖱 Soltar {a['button']}")
+                pyautogui.mouseUp(a["x"], a["y"], button=a["button"])
+
+
 
         # ===============================
         # FINALIZAÇÃO
@@ -591,6 +644,26 @@ def play_macro():
         app.after(0, lambda: status.configure(text="✅ Macro finalizada"))
 
     threading.Thread(target=run, daemon=True).start()
+def simplificar_acoes(acoes):
+    novas = []
+    i = 0
+
+    while i < len(acoes) - 1:
+        atual = acoes[i]
+        prox = acoes[i + 1]
+
+        if atual["type"] == "mouse_down" and prox["type"] == "mouse_up":
+            novas.append({
+                "type": "click",
+                "x": atual["x"],
+                "y": atual["y"],
+                "button": atual["button"]
+            })
+            i += 2
+        else:
+            i += 1
+
+    return novas
 
 def delete_macro():
     selected = macro_select.get()
